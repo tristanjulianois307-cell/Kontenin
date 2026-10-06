@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kontenin</title>
+<style>
+/* ===== Warna & dasar ===== */
+:root{--p:#5B3FD9;--soft:#EEEAFE;--dark:#1D1B3A;--grey:#8B8FA8;--line:#ECEAF5;--green:#22C55E;--orange:#F59E0B;--red:#EF4444;--blue:#3B82F6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,"Segoe UI",Roboto,sans-serif;background:#E9E6F7;color:var(--dark);display:flex;justify-content:center;align-items:center;min-height:100vh}
+#app{position:relative;width:100%;max-width:390px;height:100vh;background:#fff;display:flex;flex-direction:column;overflow:hidden}
+@media(min-width:500px){#app{height:min(844px,96vh);border-radius:36px;box-shadow:0 20px 60px rgba(60,40,140,.25)}}
+main{flex:1;overflow-y:auto;padding:30px 18px 14px;display:flex;flex-direction:column}
+main.full{padding:0;overflow:hidden}
+/* ===== Menu bawah ===== */
+nav{display:none;border-top:1px solid var(--line);padding:6px 0 8px}
+nav button{flex:1;background:none;border:0;font:inherit;font-size:10px;color:var(--grey);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+nav button span{font-size:19px;filter:grayscale(1);opacity:.6}
+nav button.on{color:var(--p);font-weight:700}
+nav button.on span{filter:none;opacity:1}
+/* ===== Komponen ===== */
+.stack{flex:none}.stack>*+*{margin-top:14px}
+h1{font-size:24px}h2{font-size:16px}
+.sub{font-size:12px;color:var(--grey);margin-top:2px}
+a{color:var(--p);font-size:12px;cursor:pointer}
+.card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+.soft{background:var(--soft)}.tap{cursor:pointer}
+.row{display:flex;align-items:center;gap:12px}.between{justify-content:space-between}.grow{flex:1}
+.ico{width:44px;height:44px;border-radius:12px;background:var(--soft);display:grid;place-items:center;font-size:20px;flex:none}
+.chip{display:inline-block;font:inherit;font-size:11px;padding:5px 12px;border-radius:20px;background:var(--soft);color:var(--p);border:0;cursor:pointer}
+.chip.on{background:var(--p);color:#fff}
+.btn{width:100%;padding:13px;border:0;border-radius:12px;background:var(--p);color:#fff;font:inherit;font-weight:600;font-size:14px;cursor:pointer}
+.btn.light{background:var(--soft);color:var(--p)}
+.grad{background:linear-gradient(135deg,#5B3FD9,#8B6CF0);color:#fff;border-radius:20px;padding:18px}
+.grad .sub{color:#D9D0FF}.grad .bar{background:#8F7BEA;margin:10px 0}.grad .bar i{background:#fff}
+.bar{height:8px;border-radius:8px;background:var(--soft);overflow:hidden}.bar i{display:block;height:100%;background:var(--p);border-radius:8px}
+.hs{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.pop{min-width:130px}.thumb{height:70px;border-radius:10px;margin-bottom:6px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+input,textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font:inherit;font-size:13px;background:#fff;color:var(--dark)}
+.back{background:none;border:0;font-size:22px;cursor:pointer;color:var(--dark)}
+.up{color:var(--green);font-size:11px}.pc{color:var(--p);font-size:11px}
+.video{height:170px;border-radius:16px;background:#2B2A4C;display:grid;place-items:center;font-size:48px;color:#fff}
+.lesson{display:flex;gap:10px;padding:10px;border-radius:10px;font-size:12px}
+.lesson.now{background:var(--soft);font-weight:700}.lesson.lock{color:var(--grey)}.lesson span{flex:1}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;row-gap:4px;margin-top:10px}
+.cal b{font-weight:400;font-size:11px;color:var(--grey)}
+.cal span{margin:auto;width:32px;height:32px;line-height:32px;border-radius:50%}
+.cal .today{background:var(--p);color:#fff;font-weight:700}
+#out .card{font-size:12px}
+.splash{flex:1;padding:30px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;color:#fff;background:linear-gradient(#2A2A72,#6C4FE0 60%,#F08A5D)}
+.splash h1{font-size:34px;letter-spacing:2px}.splash .logo{font-size:56px}.splash p{font-size:13px;opacity:.85}
+#toast{position:absolute;left:50%;bottom:80px;transform:translateX(-50%);background:var(--dark);color:#fff;padding:9px 16px;border-radius:20px;font-size:12px;opacity:0;pointer-events:none;transition:.2s;white-space:nowrap}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"><main id="screen"></main><nav id="nav"></nav><div id="toast"></div></div>
+
+<script>
+/* ===== DATA CONTOH (ganti dengan database/API nanti) ===== */
+const TABS=[['home','🏠','Home'],['learn','📚','Learn'],['create','➕','Create'],['planner','🗓️','Planner'],['profile','👤','Profile']];
+const COURSES={'Start Here':[['What is Content Creation?','1h',4.8,'💡'],['Find Your Niche','45m',4.7,'🧭'],['Know Your Audience','50m',4.6,'👥']],
+ 'Content Creation':[['Content Ideas','1h 10m',4.8,'✨'],['Storytelling','1h 30m',4.7,'📖'],['Script Writing','1h 20m',4.6,'📝']]};
+const POP=[['Video Editing Basics','4.8 · 2h 10m','#3B2A8F'],['TikTok Growth','4.7 · 1h 45m','#111827'],['Storytelling','4.7 · 1h 30m','#9D3F7A']];
+const LESSONS=['What is Content Creation?','Finding Your Niche','Understanding Your Audience','Creating Content Ideas','Writing a Good Hook','Storytelling','Editing Basics'];
+const IDEAS=[['Day in my life as a student','Vlog'],["5 tools I can't live without",'Tech'],['How I study and create content','Productivity'],['Before and after transformation','Lifestyle'],['Behind the scenes bikin konten','Vlog'],['3 kesalahan pemula di TikTok','Tips']];
+const UP=[['3 Tips for Beginners','Friday, 19:00','Video'],['My Creator Journey','Sunday, 12:00','Post']];
+const TOP=[['5 Tips Jadi Content Creator','52.3K views · 12.4% engagement'],['Day in my life as a student','38.7K views · 10.1% engagement'],['Editing di CapCut itu gampang!','24.5K views · 8.7% engagement']];
+let ideas=IDEAS.slice(0,4);
+
+/* ===== HELPER ===== */
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ico=e=>`<div class="ico">${e}</div>`;
+const back=(to,t='')=>`<div class="row"><button class="back" onclick="go('${to}')">←</button><b>${t}</b></div>`;
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),1800)};
+const list=f=>Object.entries(COURSES).map(([n,a])=>{
+  a=a.filter(c=>c[0].toLowerCase().includes(f.toLowerCase()));
+  return a.length?`<h2 style="margin-top:14px">${n}</h2><p class="sub">${a.length} courses</p>`+a.map(([t,d,r,e])=>
+    `<div class="card tap row" style="margin-top:10px" onclick="go('course')">${ico(e)}<div class="grow"><b>${t}</b><p class="sub">${d} · ★ ${r}</p></div>›</div>`).join(''):''}).join('')||'<p class="sub">Course tidak ditemukan.</p>';
+const q=v=>$('#list').innerHTML=list(v);
+const stat=(l,v,u)=>`<div class="card"><p class="sub">${l}</p><h2>${v}</h2><span class="up">↑ ${u}</span></div>`;
+const tool=(e,n,d,fn)=>`<div class="card tap" style="background:#F7F5FF" onclick="${fn}">${ico(e)}<h2 style="margin-top:8px">${n}</h2><p class="sub">${d}</p></div>`;
+const shuffle=()=>{ideas=[...IDEAS].sort(()=>Math.random()-.5).slice(0,4);go('idea')};
+const addC=()=>{const t=prompt('Judul konten baru?');if(t){UP.push([t,'Segera','Video']);go('planner')}};
+const gen=()=>{
+  const t=$('#topic').value.trim(),c=$('#ctype').value;
+  if(!t){$('#topic').focus();return toast('Isi topik atau idemu dulu ya')}
+  $('#out').innerHTML=`<h2 style="margin:14px 0 8px">Generated Script</h2><div class="card stack"><b>${esc(t)}</b> <span class="sub">(${esc(c)})</span>
+  <p><b class="pc">Hook (0-3s)</b><br>"Pernah ngerasa bingung mulai dari mana soal ${esc(t)}?"</p>
+  <p><b class="pc">Isi (3-25s)</b><br>1. Tentukan niche<br>2. Kenali audiensmu<br>3. Konsisten upload</p>
+  <p><b class="pc">Penutup (25-30s)</b><br>"Follow untuk tips selanjutnya!"</p></div>`};
+const cal=()=>{const off=(new Date(2026,8,1).getDay()+6)%7; // September 2026, minggu mulai Senin
+  return['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<b>${d}</b>`).join('')+'<i></i>'.repeat(off)+
+  Array.from({length:30},(_,i)=>`<span class="${i+1==23?'today':''}">${i+1}</span>`).join('')};
+const D=[2,3,2.5,4,4.2,5.5,6.5],P=D.map((v,i)=>`${i*50},${95-v*12}`).join(' ');
+
+/* ===== 10 LAYAR ===== */
+const S={
+splash:()=>`<div class="splash"><div style="flex:1"></div><div class="logo">▶</div><h1>KONTENIN</h1><p>Learn. Create. Grow.</p><div style="flex:1"></div>
+  <h2>Jadi content creator dengan langkah yang tepat.</h2><p>Dari belajar dasar sampai bisa membuat konten yang menarik.</p>
+  <button class="btn light" onclick="go('home')">Get Started</button></div>`,
+
+home:()=>`<div class="stack">
+  <div class="row between"><div><h1>Hi, Fadel! 👋</h1><p class="sub">Ready to create something amazing today?</p></div><span>🔔</span></div>
+  <div class="grad"><p class="sub">Continue Learning</p><h2>Content Creation 101</h2><div class="bar"><i style="width:70%"></i></div><button class="chip" onclick="go('course')">Continue →</button></div>
+  <div class="row between"><h2>Popular Courses</h2><a onclick="go('learn')">See all</a></div>
+  <div class="hs">${POP.map(([t,m,c])=>`<div class="card pop tap" onclick="go('course')"><div class="thumb" style="background:${c}"></div><b style="font-size:12px">${t}</b><p class="sub">${m}</p></div>`).join('')}</div>
+  <div class="card soft row"><div class="grow"><b>Today's Challenge 🔥</b><p class="sub">Create a 30-second video about your daily routine</p><br><button class="chip on" onclick="toast('Challenge dimulai!')">Start Challenge</button></div>${ico('📱')}</div></div>`,
+
+learn:()=>`<div class="stack"><input placeholder="🔍  Search courses..." oninput="q(this.value)">
+  <div class="hs">${['All','Beginner','Intermediate','Advanced'].map((c,i)=>`<span class="chip ${i?'':'on'}">${c}</span>`).join('')}</div>
+  <div id="list">${list('')}</div></div>`,
+
+course:()=>`<div class="stack">${back('learn')}<div class="video">▶</div><h1>Content Creation 101</h1>
+  <p class="sub">Learn the fundamentals of creating engaging content that attracts and builds an audience.</p>
+  <p style="font-size:12px">★ 4.8 (1.2k) &nbsp; 12 Lessons &nbsp; 2h 30m</p>
+  <div><b style="font-size:12px">Course Progress</b><div class="bar" style="margin-top:6px"><i style="width:80%"></i></div></div>
+  <b style="font-size:12px">Lessons</b>
+  ${LESSONS.map((l,i)=>`<div class="lesson ${i==4?'now':i>4?'lock':''}"><span style="flex:none;color:var(--grey)">${String(i+1).padStart(2,'0')}</span><span>${l}</span>${i<4?'✅':i==4?'▶️':'🔒'}</div>`).join('')}
+  <button class="btn" onclick="toast('Lanjut: Writing a Good Hook')">Continue Learning</button></div>`,
+
+create:()=>`<div class="stack"><h1>Create Something ✨</h1><p class="sub">Tools to help you make great content.</p>
+  <div class="g2">${tool('💡','Content Idea','Generate creative ideas for your next content.',"go('idea')")}${tool('📝','Script','Create a script for your video or post.',"go('script')")}
+  ${tool('#️⃣','Caption','Write catchy captions that get engagement.',"toast('Caption segera hadir')")}${tool('🔥','Hook','Create attention-grabbing hooks in seconds.',"toast('Hook segera hadir')")}</div>
+  <div class="card soft"><b style="color:var(--p)">Good content starts with a good idea! 💡</b></div></div>`,
+
+planner:()=>`<div class="stack"><h1>Content Planner</h1><p class="sub">Plan your content, stay consistent.</p>
+  <div class="card"><b>September 2026</b><div class="cal">${cal()}</div></div>
+  <h2>Upcoming Content</h2>
+  ${UP.map(([n,w,t])=>`<div class="card row">${ico(t=='Video'?'🎬':'🖼️')}<div class="grow"><b>${esc(n)}</b><p class="sub">${w}</p><span class="chip">${t}</span></div>⋮</div>`).join('')}
+  <button class="btn" onclick="addC()">+ Add Content</button></div>`,
+
+idea:()=>`<div class="stack">${back('create','Create Idea')}
+  <div class="card soft" style="text-align:center"><div style="font-size:44px">💡</div><h2>Fresh ideas for your content</h2>
+  <p class="sub" style="margin:6px 0 12px">Get inspired with trending topics and personalized suggestions.</p><button class="btn" onclick="shuffle()">Generate New Ideas</button></div>
+  <h2>Ideas for You</h2>
+  ${ideas.map(([t,tag])=>`<div class="card row">${ico('💡')}<div><b>${t}</b><br><span class="chip" style="margin-top:4px">${tag}</span></div></div>`).join('')}</div>`,
+
+script:()=>`<div class="stack">${back('create','Script Generator')}<p class="sub">Turn your idea into a structured script in seconds.</p>
+  <textarea id="topic" rows="3" maxlength="200" placeholder="Contoh: 5 tips jadi content creator pemula"></textarea>
+  <b style="font-size:13px">Content Type</b>
+  <select id="ctype"><option>TikTok Video (Short Form)</option><option>YouTube Video (Long Form)</option><option>Instagram Reels</option><option>Instagram Post</option></select>
+  <button class="btn" onclick="gen()">Generate Script</button><div id="out"></div></div>`,
+
+analytics:()=>`<div class="stack">${back('profile','Analytics')}
+  <div class="row"><span class="chip on">Overview</span><span class="chip">Content</span><span class="chip">Audience</span></div>
+  <div class="card"><p class="sub">Total Views</p><div class="row"><h1>125.4K</h1><span class="up">↑ 12%</span></div>
+  <svg viewBox="0 0 300 100" width="100%"><polygon points="0,100 ${P} 300,100" fill="#EEEAFE"/><polyline points="${P}" fill="none" stroke="#5B3FD9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="g3">${stat('Likes','8.2K','15%')}${stat('Comments','1.2K','8%')}${stat('Shares','642','20%')}</div>
+  <h2>Top Performing Content</h2>
+  ${TOP.map(([t,m])=>`<div class="card"><b style="font-size:12px">${t}</b><p class="sub">${m}</p></div>`).join('')}</div>`,
+
+profile:()=>`<div class="stack">
+  <div style="text-align:center"><div class="ico" style="width:84px;height:84px;border-radius:50%;margin:auto;font-size:34px;font-weight:700;color:var(--p)">F</div>
+  <h2 style="margin-top:8px">Fadel</h2><p class="sub">@fadelcreator</p></div>
+  <div class="card"><b style="font-size:13px">Level 5 – Rising Creator</b><div class="bar" style="margin:8px 0 4px"><i style="width:64%"></i></div><p class="sub">320 / 500 XP</p></div>
+  <div class="g3">${[['12','Courses Completed'],['48','Lessons Finished'],['7','Challenges Completed']].map(([n,l])=>`<div class="card"><h2>${n}</h2><p class="sub" style="font-size:10px">${l}</p></div>`).join('')}</div>
+  <h2>Achievements</h2>
+  <div class="g3" style="grid-template-columns:repeat(4,1fr);text-align:center;font-size:10px">${[['📘','First Lesson'],['🔥','7 Day Streak'],['▶️','First Video'],['⭐','Rising Creator']].map(([e,n])=>`<div>${ico(e).replace('class="ico"','class="ico" style="margin:auto"')}<p style="margin-top:4px">${n}</p></div>`).join('')}</div>
+  <div class="grad"><b>Keep going! You're doing great! 🚀</b></div>
+  <button class="btn" onclick="go('analytics')">Lihat Analytics</button></div>`
+};
+
+/* ===== NAVIGASI: go('nama_layar') ===== */
+function go(n){
+  const i=TABS.findIndex(t=>t[0]==n), m=$('#screen');
+  m.className=n=='splash'?'full':'';
+  m.innerHTML=S[n]();
+  m.scrollTop=0;
+  $('#nav').style.display=i<0?'none':'flex';
+  $('#nav').innerHTML=TABS.map(([k,e,l])=>`<button class="${k==n?'on':''}" onclick="go('${k}')"><span>${e}</span>${l}</button>`).join('');
+}
+go('splash');
+</script>
+</body>
+</html>
